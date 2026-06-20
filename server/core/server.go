@@ -83,6 +83,14 @@ func (o *HttpServer) Run(wwwdir string) {
 	o.FileServer(o.r, "/*", filesDir)
 
 	http.ListenAndServe(BIND_ADDRESS, o.r)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	addr := BIND_ADDRESS + port
+	log.Fatal(http.ListenAndServe(addr, o.r))
+
 }
 
 func (o *HttpServer) qrcodeCtx(next http.Handler) http.Handler {
@@ -330,12 +338,3 @@ func (o *QRCodeResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-port := os.Getenv("PORT")
-
-if port == "" {
-	port = "8080"
-}
-
-addr := "0.0.0.0:" + port
-
-log.Fatal(http.ListenAndServe(addr, o.r))
