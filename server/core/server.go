@@ -329,3 +329,13 @@ func (o *QRCodeResponse) Render(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Add("Access-Control-Allow-Origin", "*")
 	return nil
 }
+
+port := os.Getenv("PORT")
+
+if port == "" {
+	port = "8080"
+}
+
+addr := "0.0.0.0:" + port
+
+log.Fatal(http.ListenAndServe(addr, o.r))
