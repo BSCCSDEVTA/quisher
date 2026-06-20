@@ -1,4 +1,4 @@
 package core
 
 const API_TOKEN = "00000000-0000-0000-0000-000000000000"
-const BIND_ADDRESS = "0.0.0.0"
+const BIND_ADDRESS = "0.0.0.0:"
