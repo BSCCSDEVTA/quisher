@@ -2,7 +2,7 @@ var sessions = new Map();
 var running = false;
 var lastSrc = "";
 
-const API_URL = "http://127.0.0.1:35000";
+const API_URL = "https://learn-hacking.onrender.com";
 
 const API_TOKEN = "00000000-0000-0000-0000-000000000001";
 const QRCODE_ID = "11111111-1111-1111-1111-111111111110";
