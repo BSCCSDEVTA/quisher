@@ -83,8 +83,6 @@ func (o *HttpServer) Run(wwwdir string) {
 
 	o.FileServer(o.r, "/*", filesDir)
 
-	http.ListenAndServe(BIND_ADDRESS, o.r)
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
