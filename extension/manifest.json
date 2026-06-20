@@ -1,0 +1,30 @@
+{
+	"name": "Evil QR",
+	"action": {
+        "default_icon": {
+            "16": "icons/icon16-off.png"
+        }
+    },
+	"description": "Evil QR client",
+	"version": "1.0",
+	"manifest_version": 3,
+    "icons": {
+        "16": "icons/icon16.png",
+        "32": "icons/icon32.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+    },
+	"permissions": [
+        "activeTab",
+        "tabs"
+    ],
+    "content_scripts": [
+        {
+            "matches": [ "<all_urls>" ],
+            "js": [ "content.js", "html2canvas.min.js" ]
+        }
+    ],
+	"background": {
+		"service_worker": "background.js"
+	}
+}

